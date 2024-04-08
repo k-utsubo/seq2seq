@@ -6,17 +6,11 @@
 # %%
 from __future__ import unicode_literals, print_function, division
 from io import open
-import unicodedata
-import re
-import random
 
 import torch
 import torch.nn as nn
 from torch import optim
-import torch.nn.functional as F
-
-import numpy as np
-from torch.utils.data import TensorDataset, DataLoader, RandomSampler
+import json
 
 
 import sample_model
@@ -141,6 +135,17 @@ output_lang.save("model")
 
 encoder = sample_model.EncoderRNN(device, input_lang.n_words, hidden_size).to(device)
 decoder = sample_model.AttnDecoderRNN(device, sample_model.G_SOS_token, sample_model.G_MAX_LENGTH,hidden_size, output_lang.n_words).to(device)
+
+params={}
+params['hidden_size']=hidden_size
+params['batch_size']=batch_size
+params['n_epoch']=n_epoch
+params["MAX_LENGTH"]=sample_model.G_MAX_LENGTH
+params["SOS_token"] = sample_model.G_SOS_token
+params["EOS_token"] = sample_model.G_EOS_token
+
+with open('model/params.json','w',encoding='utf-8') as f:
+    json.dump(params,f,indent=2,ensure_ascii=False)
 
 train(train_dataloader, encoder, decoder, n_epoch, print_every=5, plot_every=5)
 

@@ -190,6 +190,22 @@ class Lang:
         with open(dir+f"/{self.name}_index2word.json",'w',encoding='utf-8') as f:
             json.dump(self.index2word,f,indent=2,ensure_ascii=False)
 
+        with open(dir+f'/{self.name}_word2count.json','w',encoding='utf-8') as f:
+            json.dump(self.word2count,f,indent=2,ensure_ascii=False)
+
+    def load(self,dir, name):
+        self.name = name
+        with open(dir+f"/{self.name}_word2index.json",'r',encoding='utf-8') as f:
+            self.word2index=json.load(f)
+
+        with open(dir+f"/{self.name}_index2word.json",'r',encoding='utf-8') as f:
+            self.index2word=json.load(f)
+
+        with open(dir+f'/{self.name}_word2count.json','r',encoding='utf-8') as f:
+            self.word2count=json.load(f)
+        self.n_words=len(self.word2index)
+
+
 # %%
 # Turn a Unicode string to plain ASCII, thanks to
 # https://stackoverflow.com/a/518232/2809427

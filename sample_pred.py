@@ -61,7 +61,7 @@ hidden_size = 128
 batch_size = 32
 device = torch.device( "cpu")
 
-input_lang, output_lang, train_dataloader = sample_model.get_dataloader(device, sample_model.G_MAX_LENGTH, sample_model.G_EOS_token,sample_model.G_eng_prefixes,batch_size)
+#input_lang, output_lang, train_dataloader = sample_model.get_dataloader(device, sample_model.G_MAX_LENGTH, sample_model.G_EOS_token,sample_model.G_eng_prefixes,batch_size)
 
 encoder = sample_model.EncoderRNN(device, input_lang.n_words, hidden_size).to(device)
 decoder = sample_model.AttnDecoderRNN(device, sample_model.G_SOS_token, sample_model.G_MAX_LENGTH,hidden_size, output_lang.n_words).to(device)
