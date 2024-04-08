@@ -2,3 +2,6 @@ venv
 data
 data.zip
 model
+
+.idea
+__pycache__
