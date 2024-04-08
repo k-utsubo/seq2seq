@@ -75,17 +75,6 @@ encoder.eval()
 decoder.eval()
 
 
-
-
-# https://pytorch.org/tutorials/beginner/saving_loading_models.html
-encoder.to(torch.device('cpu'))
-encoder_scripted = torch.jit.script(encoder) # Export to TorchScript
-encoder_scripted.save('model/encoder_scripted.pt') # Save
-
-decoder.to(torch.device('cpu'))
-decoder_scripted = torch.jit.script(decoder) # Export to TorchScript
-decoder_scripted.save('model/decoder_scripted.pt') # Save
-
 # %%
 # predict
 

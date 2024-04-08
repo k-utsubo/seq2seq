@@ -136,6 +136,9 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 input_lang, output_lang, train_dataloader = sample_model.get_dataloader(device,sample_model.G_MAX_LENGTH, sample_model.G_EOS_token,sample_model.G_eng_prefixes,  batch_size)
 
+input_lang.save("model")
+output_lang.save("model")
+
 encoder = sample_model.EncoderRNN(device, input_lang.n_words, hidden_size).to(device)
 decoder = sample_model.AttnDecoderRNN(device, sample_model.G_SOS_token, sample_model.G_MAX_LENGTH,hidden_size, output_lang.n_words).to(device)
 

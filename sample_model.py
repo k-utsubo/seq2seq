@@ -4,16 +4,19 @@ from __future__ import unicode_literals, print_function, division
 from io import open
 import unicodedata
 import re
-import random
+import os
 
 import torch
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-
+import json
 import numpy as np
 from torch.utils.data import TensorDataset, DataLoader, RandomSampler
 
+# https://discuss.pytorch.org/t/runtimeerror-strides-called-on-undefined-tensor/159761
+from optparse import Option
+from typing import Optional, Tuple, Union
 
 
 # %%
@@ -116,7 +119,7 @@ class AttnDecoderRNN(nn.Module):
         self.out = nn.Linear(hidden_size, output_size)
         self.dropout = nn.Dropout(dropout_p)
 
-    def forward(self, encoder_outputs, encoder_hidden, target_tensor):
+    def forward(self, encoder_outputs, encoder_hidden, target_tensor:Optional[torch.Tensor]=None):
         batch_size = encoder_outputs.size(0)
         decoder_input = torch.empty(batch_size, 1, dtype=torch.long, device=self.device).fill_(self.SOS_token)
         decoder_hidden = encoder_hidden
@@ -178,6 +181,14 @@ class Lang:
             self.n_words += 1
         else:
             self.word2count[word] += 1
+
+    def save(self, dir):
+        os.makedirs(dir,exist_ok=True)
+        with open(dir+f"/{self.name}_word2index.json",'w',encoding='utf-8') as f:
+            json.dump(self.word2index,f,indent=2,ensure_ascii=False)
+
+        with open(dir+f"/{self.name}_index2word.json",'w',encoding='utf-8') as f:
+            json.dump(self.index2word,f,indent=2,ensure_ascii=False)
 
 # %%
 # Turn a Unicode string to plain ASCII, thanks to
