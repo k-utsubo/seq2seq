@@ -28,7 +28,7 @@ def evaluate(device, EOS_token, encoder, decoder, sentence, input_lang, output_l
         encoder_outputs, encoder_hidden = encoder(input_tensor)
         decoder_outputs, decoder_hidden, decoder_attn = decoder(encoder_outputs, encoder_hidden)
 
-        _, topi = decoder_outputs.topk(1)
+        tmp, topi = decoder_outputs.topk(1)
         decoded_ids = topi.squeeze()
 
         decoded_words = []
@@ -50,7 +50,7 @@ def evaluateRandomly(device, EOS_token,encoder, decoder,pairs, n=10):
         print('<', output_sentence)
         print('')
 
-def evaluateAndShowAttention(device, EOS_token, input_sentence):
+def evaluateAndShowAttention(device, EOS_token, encoder, decoder, input_sentence):
     output_words, attentions = evaluate(device, EOS_token,encoder, decoder, input_sentence, input_lang, output_lang)
     print('input =', input_sentence)
     print('output =', ' '.join(output_words))
@@ -74,20 +74,19 @@ decoder.load_state_dict(torch.load("model/decoder.pt"))
 encoder.eval()
 decoder.eval()
 
+print(encoder.device)
+print(encoder.embedding.weight.device)
+print(decoder.device)
+print(decoder.embedding.weight.device)
 
 # %%
 # predict
 
 # %%
-evaluateRandomly(device, sample_model.G_EOS_token, encoder, decoder, pairs)
+#evaluateRandomly(device, sample_model.G_EOS_token, encoder, decoder, pairs)
 
 
 
 
-evaluateAndShowAttention(device,sample_model.G_EOS_token, 'il n est pas aussi grand que son pere')
+evaluateAndShowAttention(device,sample_model.G_EOS_token,encoder,decoder, 'il n est pas aussi grand que son pere')
 
-evaluateAndShowAttention(device,sample_model.G_EOS_token,'je suis trop fatigue pour conduire')
-
-evaluateAndShowAttention(device,sample_model.G_EOS_token,'je suis desole si c est une question idiote')
-
-evaluateAndShowAttention(device,sample_model.G_EOS_token,'je suis reellement fiere de vous')

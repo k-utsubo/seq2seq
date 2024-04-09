@@ -124,7 +124,7 @@ def evaluate(device,EOS_token, encoder, decoder, sentence, input_lang, output_la
 hidden_size = 128
 batch_size = 32
 n_epoch=80
-#n_epoch = 1
+n_epoch = 1
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -157,18 +157,24 @@ decoder.eval()
 # %%
 import os
 os.makedirs("model",exist_ok=True)
-
+encoder.device=torch.device('cpu')
+decoder.device=torch.device('cpu')
+encoder.cpu()
+decoder.cpu()
+print(encoder.device)
+print(decoder.device)
+print(encoder.embedding.weight.device)
 # %%
 torch.save(encoder.state_dict(),"model/encoder.pt")
 torch.save(decoder.state_dict(),"model/decoder.pt")
 
 # %%
 # https://pytorch.org/tutorials/beginner/saving_loading_models.html
-encoder.to(torch.device('cpu'))
+
 encoder_scripted = torch.jit.script(encoder) # Export to TorchScript
 encoder_scripted.save('model/encoder_scripted.pt') # Save
 
-decoder.to(torch.device('cpu'))
+
 decoder_scripted = torch.jit.script(decoder) # Export to TorchScript
 decoder_scripted.save('model/decoder_scripted.pt') # Save
 

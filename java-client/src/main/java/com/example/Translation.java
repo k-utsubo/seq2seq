@@ -142,19 +142,27 @@ public class Translation
             }
             inputs.add(id);
         }
+        inputs.add((long)params.get("EOS_token"));
 
         // for forwarding the model
-        Shape inputShape = new Shape(1);
-        Shape hiddenShape = new Shape(1, 1, 256);
-        FloatBuffer fb = FloatBuffer.allocate(256);
+        Shape inputShape = new Shape(1, inputs.size());
+        Shape hiddenShape = new Shape(1, 1, params.get("hidden_size"));
+        FloatBuffer fb = FloatBuffer.allocate(params.get("hidden_size"));
         NDArray hiddenTensor = manager.create(fb, hiddenShape);
-        long[] outputsShape = {params.get("MAX_LENGTH"), params.get("hidden_size")};
+        long[] outputsShape = {1, params.get("MAX_LENGTH"), params.get("hidden_size")};
         FloatBuffer outputTensorBuffer = FloatBuffer.allocate(params.get("MAX_LENGTH") * params.get("hidden_size"));
 
         // for using the model
         Block block = model.getBlock();
         ParameterStore ps = new ParameterStore();
 
+        long[] inputLong  = inputs.stream().mapToLong(i->i).toArray();
+        NDArray inputTensor = manager.create(inputLong, inputShape);
+        NDList inputTensorList = new NDList(inputTensor);
+        NDList outputsTensor = block.forward(ps, inputTensorList, false);
+        return outputsTensor;
+
+        /*
         // loops through forwarding of each word
         for (long input : inputs) {
             NDArray inputTensor = manager.create(new long[] {input}, inputShape);
@@ -168,6 +176,44 @@ public class Translation
         NDArray outputsTensor = manager.create(outputTensorBuffer, new Shape(outputsShape));
 
         return new NDList(outputsTensor, hiddenTensor);
+
+         */
+
+
+        /*
+        // for forwarding the model
+        Shape inputShape = new Shape(1, 1);
+        Shape hiddenShape = new Shape(1, 1, params.get("hidden_size"));
+        FloatBuffer fb = FloatBuffer.allocate(params.get("hidden_size"));
+        NDArray hiddenTensor = manager.create(fb, hiddenShape);
+        long[] outputsShape = {1, params.get("MAX_LENGTH"), params.get("hidden_size")};
+        FloatBuffer outputTensorBuffer = FloatBuffer.allocate(params.get("MAX_LENGTH") * params.get("hidden_size"));
+
+        // for using the model
+        Block block = model.getBlock();
+        ParameterStore ps = new ParameterStore();
+
+        NDArray inputTensor = manager.create(inputs.stream().mapToLong(i->i).toArray(), inputShape);
+        NDList inputTensorList = new NDList(inputTensor);
+        NDList outputs  =  block.forward(ps, inputTensorList, false);
+        return outputs;
+
+        // loops through forwarding of each word
+        for (long input : inputs) {
+            NDArray inputTensor = manager.create(new long[] {input}, inputShape);
+            //NDList inputTensorList = new NDList(inputTensor, hiddenTensor);
+            NDList inputTensorList = new NDList(inputTensor);
+            NDList outputs = block.forward(ps, inputTensorList, false);
+            NDArray outputTensor = outputs.get(0);
+            outputTensorBuffer.put(outputTensor.toFloatArray());
+            hiddenTensor = outputs.get(1);
+        }
+        outputTensorBuffer.rewind();
+        NDArray outputsTensor = manager.create(outputTensorBuffer, new Shape(outputsShape));
+
+        return new NDList(outputsTensor, hiddenTensor);
+        */
+
     }
 
     public String predictDecoder(
@@ -186,9 +232,22 @@ public class Translation
         Block block = model.getBlock();
         ParameterStore ps = new ParameterStore();
 
+        NDList outputs = block.forward(ps, toDecode, false);
+        NDArray decoder_outputs = outputs.get(0);
+        NDArray decoder_hidden = outputs.get(1);
+        NDArray decoder_attn = outputs.get(2);
+
+        NDList topi = decoder_outputs.topK(1,2);
+        NDArray top_idx = topi.get(1);
+        NDArray decoded_ids = top_idx.squeeze();
+        for (int i = 0; i < params.get("MAX_LENGTH"); i++) {
+            result.add((int)decoded_ids.getLong((long)i));
+        }
+        /*
         // loops through forwarding of each word
         for (int i = 0; i < params.get("MAX_LENGTH"); i++) {
-            NDList inputTensorList = new NDList(inputTensor, hiddenTensor, outputsTensor);
+            //NDList inputTensorList = new NDList(inputTensor, hiddenTensor, outputsTensor);
+            NDList inputTensorList = new NDList(outputsTensor, hiddenTensor );
             NDList outputs = block.forward(ps, inputTensorList, false);
             NDArray outputTensor = outputs.get(0);
             hiddenTensor = outputs.get(1);
@@ -210,9 +269,14 @@ public class Translation
             inputTensor = manager.create(new long[] {topIdx}, decoderInputShape);
         }
 
+         */
+
         StringBuilder sb = new StringBuilder();
         // map english words and create output string
         for (Integer word : result) {
+            if(word == params.get("SOS_token") || word == params.get("EOS_token")){
+                continue;
+            }
             sb.append(idx2wrd.get(word.toString())).append(' ');
         }
         return sb.toString().trim();
@@ -228,7 +292,7 @@ public class Translation
         parser.addArgument("--params").setDefault("model/params.json").help("");
         parser.addArgument("--encoder").setDefault("model/encoder_scripted.pt").help("");
         parser.addArgument("--decoder").setDefault("model/decoder_scripted.pt").help("");
-        parser.addArgument("--input").setDefault("trop tard").help("");
+        parser.addArgument("--input").setDefault("il n est pas aussi grand que son pere").help("");
         Namespace ns = parser.parseArgs(args);
 
         String source_word2index = ns.getString("source_word2index");
